@@ -1,0 +1,5 @@
+fastapi
+dynaconf
+tortoise-orm
+
+aerich==0.6.3
