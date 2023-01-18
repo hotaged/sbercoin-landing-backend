@@ -2,41 +2,27 @@ import fastapi
 
 from api import models
 from api.config import settings
-from api.timing import next_winpay
 
-from fastapi import Request
+from fastapi import Request, Depends
 from fastapi.responses import JSONResponse
 
 from tortoise import Tortoise, connections
 from tortoise.exceptions import DoesNotExist, IntegrityError
 
-
 app = fastapi.FastAPI()
 
 
 @app.get('/bids', response_model=list[models.UserBidPydantic])
-async def list_bids(valid: bool | None = None):
-    if valid is None:
-        return await models.UserBidPydantic.from_queryset(models.UserBid.all())
-
-    if valid:
-        return await models.UserBidPydantic.from_queryset(models.UserBid.filter(created_at__gte=next_winpay()))
-    else:
-        return await models.UserBidPydantic.from_queryset(models.UserBid.filter(created_at__le=next_winpay()))
+async def list_bids():
+    return await models.UserBidPydantic.from_queryset(models.UserBid.all())
 
 
-@app.post("/bids", response_model=models.UserBidPydantic)
-async def create_bid(bid: models.UserBidInPydantic):
-    user_object = await models.UserBid.create(**bid.dict(exclude_unset=True))
-    """
-    @TODO:
-        - add validation for email field.
-        - add validation for sbercoin address.
-        
-        - add IP request limiter.
-        - add Email request limiter.
-        - add Address request limiter.
-    """
+@app.post("/bids", response_model=models.UserBidPydantic,)
+async def create_bid(request: Request, bid: models.UserBidInPydantic):
+    client = request.scope['client']
+    user_object = await models.UserBid.create(
+        **bid.dict(exclude_unset=True), ip_address=client[0]
+    )
     return await models.UserBidPydantic.from_tortoise_orm(user_object)
 
 
