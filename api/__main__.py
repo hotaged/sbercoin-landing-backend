@@ -12,8 +12,8 @@ from tortoise.exceptions import DoesNotExist, IntegrityError
 app = fastapi.FastAPI()
 
 
-@app.get('/bids', response_model=list[models.UserBidPydantic])
-async def list_bids():
+@app.get('/bids')
+async def list_bids() -> list[models.UserBidPydantic]:
     return await models.UserBidPydantic.from_queryset(models.UserBid.all())
 
 
