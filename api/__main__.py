@@ -17,13 +17,31 @@ async def list_bids() -> list[models.UserBidPydantic]:
     return await models.UserBidPydantic.from_queryset(models.UserBid.all())
 
 
-@app.post("/bids", response_model=models.UserBidPydantic,)
+@app.post("/bids", response_model=models.UserBidPydantic, responses={404: {"model": models.JsonMessage}})
 async def create_bid(request: Request, bid: models.UserBidInPydantic):
     client = request.scope['client']
+
+    if bid.ref_address is not None:
+        ref_object = await models.UserBid.get_or_none(
+            sbercoin_address=bid.sbercoin_address
+        )
+
+        if ref_object is None:
+            return models.JsonMessage(message="Ref address not found.")
+
+        # TODO! Send tokens to users
+
     user_object = await models.UserBid.create(
-        **bid.dict(exclude_unset=True), ip_address=client[0]
+        **bid.dict(exclude_unset=True, exclude=('ref_address', 'captcha')), ip_address=client[0]
     )
     return await models.UserBidPydantic.from_tortoise_orm(user_object)
+
+
+@app.get("/winners")
+async def winners() -> list[models.UserBidPydantic]:
+    return await models.UserBidHistoryPydantic.from_queryset(
+        await models.UserBidHistory.filter(is_winner=True).order_by('-created_at')
+    )
 
 
 @app.on_event("startup")
