@@ -52,16 +52,29 @@ class UserBidHistory(models.Model):
 class UserBidInPydantic(BaseModel):
     email: EmailStr
     sbercoin_address: constr(max_length=34, min_length=34)
-    ref_address: constr(max_length=34, min_length=34) | None
-    captcha: str
+    ref_address: constr(max_length=34, min_length=34) | None = None
+    captcha: str | None = None
 
     @classmethod
     @validator('sbercoin_address')
-    @validator('ref_address')
     def sbercoin_address_validation(cls, v: str | None):
+        if not v.startswith('S'):
+            raise ValueError("Invalid sbercoin address")
+        return v
+
+    @classmethod
+    @validator('ref_address')
+    def ref_address_validation(cls, v: str | None):
         if v is not None and not v.startswith('S'):
             raise ValueError("Invalid sbercoin address")
         return v
+
+
+class TimeRemain(BaseModel):
+    hours: int
+    minutes: int
+    seconds: int
+    total_seconds: int
 
 
 class JsonMessage(BaseModel):

@@ -11,3 +11,5 @@ aerich==0.6.3
 redis>=4.2.0rc1
 
 celery
+
+gunicorn

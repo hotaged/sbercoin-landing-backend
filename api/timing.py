@@ -22,6 +22,13 @@ def is_valid_bid(bid_datetime: datetime) -> bool:
     return bid_datetime <= winpay
 
 
+def seconds_remains() -> int:
+    winpay = next_winpay()
+    now = make_aware(datetime.now(), get_timezone())
+
+    return (winpay - now).seconds
+
+
 def next_winpay() -> datetime:
     winpay_day = date.today()
 
@@ -29,4 +36,3 @@ def next_winpay() -> datetime:
         winpay_day = winpay_day + timedelta(days=1)
 
     return make_aware(datetime.combine(winpay_day, winpay_time), get_timezone())
-
