@@ -12,6 +12,8 @@ RUN /usr/share/python3/app/bin/pip install -Ur requirements.txt \
 
 FROM snakepacker/python:3.11 as api
 
+RUN apt-get install tzdata
+
 COPY --from=builder /usr/share/python3/app /usr/share/python3/app
 
 RUN ln -snf /usr/share/python3/app/bin/* /usr/local/bin/

@@ -19,3 +19,5 @@ services:
     command: bash -c "gunicorn api.__main__:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000"
     volumes:
       - ./settings.toml:/usr/local/bin/settings.toml
+    environment:
+      TZ: "Europe/Moscow"
