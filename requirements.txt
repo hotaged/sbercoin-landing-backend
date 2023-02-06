@@ -13,3 +13,7 @@ redis>=4.2.0rc1
 celery
 
 gunicorn
+
+uvicorn
+
+asyncpg
