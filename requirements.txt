@@ -1,8 +1,8 @@
-fastapi
+fastapi~=0.89.1
 
-pydantic[email]
+pydantic[email]~=1.10.4
 
-dynaconf
+dynaconf~=3.1.11
 
 tortoise-orm
 
@@ -17,3 +17,13 @@ gunicorn
 uvicorn
 
 asyncpg
+
+rich~=13.0.1
+
+requests~=2.28.2
+
+jsonrpclib~=0.2.1
+
+aiohttp~=3.8.3
+
+ujson~=5.7.0
