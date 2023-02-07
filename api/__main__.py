@@ -9,8 +9,19 @@ from fastapi.responses import JSONResponse
 
 from tortoise import Tortoise, connections
 from tortoise.exceptions import DoesNotExist, IntegrityError
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = fastapi.FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/time-remain", response_model=models.TimeRemain)
