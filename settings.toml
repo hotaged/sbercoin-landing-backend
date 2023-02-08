@@ -7,6 +7,6 @@ microsecond = 0
 timezone = "Europe/Moscow"
 
 [storages]
-postgres = "postgres://sbercoin:sbercoin-password@postgres:5432/sbercoin"
+postgres = "postgres://sbercoin:sbercoin-password@127.0.0.1:5432/sbercoin"
 redis = "redis://127.0.0.1:6379/0"
 

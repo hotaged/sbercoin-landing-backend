@@ -59,24 +59,15 @@ async def create_bid(request: Request, bid: models.UserBidInPydantic):
         )
 
     # TODO! Add captcha validation
-
-    if bid.ref_address is not None:
-        ref_object = await models.UserBid.get_or_none(
-            sbercoin_address=bid.sbercoin_address
-        )
-
-        if ref_object is None:
-            return JSONResponse(
-                models.JsonMessage(message="Ref address not found.").dict(), 404
-            )
+    # TODO! Add ref address validation
 
     user_object = await models.UserBid.create(
-        **bid.dict(exclude_unset=True, exclude={'ref_address', 'captcha'}), ip_address=client[0]
+        **bid.dict(exclude_unset=True, exclude={'captcha'}), ip_address=client[0]
     )
     return await models.UserBidPydantic.from_tortoise_orm(user_object)
 
 
-@app.get("/winners", response_model=list[models.UserBidPydantic])
+@app.get("/winners", response_model=list[models.UserBidHistoryPydantic])
 async def winners() -> list[models.UserBidPydantic]:
     return await models.UserBidHistoryPydantic.from_queryset(
         models.UserBidHistory.filter(is_winner=True).order_by('-created_at')

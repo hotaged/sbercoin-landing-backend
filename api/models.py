@@ -21,6 +21,12 @@ class UserBid(models.Model):
         max_length=34
     )
 
+    ref_address = fields.CharField(
+        null=True,
+        unique=False,
+        max_length=34
+    )
+
     created_at = fields.DatetimeField(auto_now_add=True)
     modified_at = fields.DatetimeField(auto_now=True)
 
@@ -47,6 +53,8 @@ class UserBidHistory(models.Model):
     modified_at = fields.DatetimeField()
 
     is_winner = fields.BooleanField(default=False, null=False)
+    calculated_hash = fields.CharField(max_length=64, null=False)
+    bids_count = fields.IntField(null=False)
 
 
 class UserBidInPydantic(BaseModel):
