@@ -55,6 +55,7 @@ class UserBidHistory(models.Model):
     is_winner = fields.BooleanField(default=False, null=False)
     calculated_hash = fields.CharField(max_length=64, null=False)
     bids_count = fields.IntField(null=False)
+    number = fields.IntField(null=False)
 
 
 class UserBidInPydantic(BaseModel):

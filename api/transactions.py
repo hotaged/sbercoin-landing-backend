@@ -61,8 +61,6 @@ class TransactionManager:
             [{address: amount}, {self.wallet: balance - amount - fee}]
         ])
 
-        print(method)
-
         return method['result']
 
     async def sign_raw_transaction(self, unsigned_tx: str) -> str:
@@ -70,8 +68,6 @@ class TransactionManager:
             unsigned_tx,
             [self.private_key]
         ])
-
-        print(method)
 
         return method['result']['hex']
 
