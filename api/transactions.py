@@ -1,3 +1,5 @@
+import itertools
+
 import rich
 import ujson
 
@@ -13,6 +15,17 @@ SBERCOIN_PASSWORD = "32Xqb%7i8meM7xtoM?Y+"
 SBERCOIN_PORT = 3889
 SBERCOIN_WALLET = "SY2kNKexBwJt1s7cd3KdphdPCGmVoSmbUN"
 SBERCOIN_PRIVATE_KEY = "9toyp133wmyP9oaMnWs1nxy4zUuoCcS47MQr8NPjExxah9ygGeTh"
+
+
+"""
+1000 SBER каждому
++ По рефералке
+
+1000 SBER пригласившему, +10% от выигрыша
+
+1000 SBER приглашенному
+Так?
+"""
 
 
 class TransactionManager:
@@ -54,12 +67,18 @@ class TransactionManager:
 
     async def create_raw_transaction(self, amount: float, address: str, fee: float) -> str:
         balance = await self.get_balance()
-        utxo = await self.get_utxo()
+        utxo_list = await self.get_utxo()
+
+        print(balance)
 
         method = await self.call_method("createrawtransaction", [
-            [{"txid": utxo[0]['txid'], "vout": utxo[0]['outputIndex']}],
+            [
+                {"txid": utxo['txid'], "vout": utxo['outputIndex']} for utxo in utxo_list
+            ],
             [{address: amount}, {self.wallet: balance - amount - fee}]
         ])
+
+        rich.print("Creating result result: ", method)
 
         return method['result']
 
@@ -68,6 +87,8 @@ class TransactionManager:
             unsigned_tx,
             [self.private_key]
         ])
+
+        rich.print("Singing result: ", method)
 
         return method['result']['hex']
 
@@ -88,19 +109,21 @@ if __name__ == '__main__':
             SBERCOIN_WALLET, SBERCOIN_PRIVATE_KEY
         )
 
-        txid = await tm.get_address_txid()
-        balance = await tm.get_balance()
-        utxo = await tm.get_utxo()
+        unsigned_tx = None
+        for fee in itertools.count(0.01, 0.01):
+            rich.print("Retrying with fee: ", fee)
 
-        rich.print(txid)
-        rich.print(utxo)
+            unsigned_tx = await tm.create_raw_transaction(
+                25, 'SVUt7GDHZrejN17XE8a2GEbACC8VAmn4sk', fee
+            )
 
-        unsinged_tx = await tm.create_raw_transaction(
-            1.0, 'SVUt7GDHZrejN17XE8a2GEbACC8VAmn4sk', 0.01
-        )
+            if unsigned_tx is None:
+                continue
+
+            break
 
         singed_tx = await tm.sign_raw_transaction(
-            unsinged_tx
+            unsigned_tx
         )
 
         sent_raw_tx = await tm.send_raw_transaction(singed_tx)
