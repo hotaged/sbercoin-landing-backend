@@ -1,8 +1,10 @@
 import fastapi
+import rich
 
 from api import models
 from api.config import settings
 from api.timing import seconds_remains
+from api.transactions import TransactionManager
 
 from fastapi import Request, Depends
 from fastapi.responses import JSONResponse
@@ -12,8 +14,23 @@ from tortoise.exceptions import DoesNotExist, IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
 
 
-app = fastapi.FastAPI()
+SBERCOIN_ADDRESS = settings.sbercoin.host
+SBERCOIN_USER = settings.sbercoin.user
+SBERCOIN_PASSWORD = settings.sbercoin.password
+SBERCOIN_PORT = settings.sbercoin.port
+SBERCOIN_WALLET = settings.sbercoin.wallet
+SBERCOIN_PRIVATE_KEY = settings.sbercoin.wallet_pk
 
+PRIZE_REGISTER = settings.prize.register
+PRIZE_REFERRAL = settings.prize.referral
+PRIZE_MASTER = settings.prize.master
+
+app = fastapi.FastAPI()
+sbercoin = TransactionManager(
+    f"http://{SBERCOIN_ADDRESS}:{SBERCOIN_PORT}",
+    (SBERCOIN_USER, SBERCOIN_PASSWORD),
+    SBERCOIN_WALLET, SBERCOIN_PRIVATE_KEY
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,7 +63,10 @@ async def list_bids() -> list[models.UserBidPydantic]:
     return await models.UserBidPydantic.from_queryset(models.UserBid.all())
 
 
-@app.post("/bids", response_model=models.UserBidPydantic, responses={404: {"model": models.JsonMessage}, 403: {"model": models.JsonMessage}})
+@app.post("/bids", response_model=models.UserBidPydantic, responses={
+    404: {"model": models.JsonMessage},
+    403: {"model": models.JsonMessage}
+})
 async def create_bid(request: Request, bid: models.UserBidInPydantic):
     client = request.scope['client']
 
@@ -59,7 +79,40 @@ async def create_bid(request: Request, bid: models.UserBidInPydantic):
         )
 
     # TODO! Add captcha validation
-    # TODO! Add ref address validation
+
+    payable = {}
+
+    if bid.ref_address is not None:
+        if bid.sbercoin_address == bid.ref_address:
+            return JSONResponse(models.JsonMessage(
+                message="You can't use yourself as a referral."
+            ).dict(), 403)
+
+        if not await sbercoin.address_exists(bid.ref_address):
+            return JSONResponse(models.JsonMessage(
+                message="Referral address doesn't exists."
+            ).dict(), 404)
+
+        payable = {
+            bid.ref_address: PRIZE_REFERRAL,
+            bid.sbercoin_address: PRIZE_REGISTER
+        }
+
+    if not await sbercoin.address_exists(bid.sbercoin_address):
+        return JSONResponse(models.JsonMessage(
+            message="Sbercoin address doesn't exists."
+        ).dict(), 404)
+
+    if bid.sbercoin_address in payable:
+        payable[bid.sbercoin_address] += PRIZE_REFERRAL
+    else:
+        payable[bid.sbercoin_address] = PRIZE_REGISTER
+
+    payable = list(map(lambda key: {key: payable[key]}, payable))
+
+    result = await sbercoin.send_coins(payable)
+
+    rich.print(result)
 
     user_object = await models.UserBid.create(
         **bid.dict(exclude_unset=True, exclude={'captcha'}), ip_address=client[0]

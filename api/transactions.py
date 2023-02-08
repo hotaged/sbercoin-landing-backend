@@ -3,29 +3,9 @@ import itertools
 import rich
 import ujson
 
-import asyncio
-
 from aiohttp.client import (
     ClientSession, BasicAuth
 )
-
-SBERCOIN_ADDRESS = "136.244.89.46"
-SBERCOIN_USER = "SberUser"
-SBERCOIN_PASSWORD = "32Xqb%7i8meM7xtoM?Y+"
-SBERCOIN_PORT = 3889
-SBERCOIN_WALLET = "SY2kNKexBwJt1s7cd3KdphdPCGmVoSmbUN"
-SBERCOIN_PRIVATE_KEY = "9toyp133wmyP9oaMnWs1nxy4zUuoCcS47MQr8NPjExxah9ygGeTh"
-
-
-"""
-1000 SBER каждому
-+ По рефералке
-
-1000 SBER пригласившему, +10% от выигрыша
-
-1000 SBER приглашенному
-Так?
-"""
 
 
 class TransactionManager:
@@ -36,6 +16,31 @@ class TransactionManager:
         self.auth = BasicAuth(*auth)
         self.wallet = wallet
         self.private_key = pk
+
+    async def send_coins(self, payable: list[dict[str, float]], fee: float = 0.01,) -> dict:
+        unsigned_tx = None
+
+        for fee in itertools.count(fee, 0.01):
+
+            unsigned_tx = await self.create_raw_transaction(
+                fee, payable
+            )
+
+            if unsigned_tx is None:
+                continue
+
+            break
+
+        singed_tx = await self.sign_raw_transaction(
+            unsigned_tx
+        )
+
+        return await self.send_raw_transaction(singed_tx)
+
+    async def address_exists(self, address: str):
+        result = await self.call_method("getaddressbalance", [address])
+        rich.print(result)
+        return result['error'] is None
 
     async def fetch(self, client: ClientSession, data: dict) -> dict:
         async with client.post('/', json=data) as response:
@@ -65,20 +70,22 @@ class TransactionManager:
 
         return method['result']
 
-    async def create_raw_transaction(self, amount: float, address: str, fee: float) -> str:
+    async def create_raw_transaction(self, fee: float, payable: list[dict[str, float]]) -> str:
         balance = await self.get_balance()
         utxo_list = await self.get_utxo()
 
-        print(balance)
+        amount: float = 0
+        for address in payable:
+            amount += list(address.values())[0]
 
         method = await self.call_method("createrawtransaction", [
             [
                 {"txid": utxo['txid'], "vout": utxo['outputIndex']} for utxo in utxo_list
             ],
-            [{address: amount}, {self.wallet: balance - amount - fee}]
+            [*payable, {self.wallet: balance - amount - fee}]
         ])
 
-        rich.print("Creating result result: ", method)
+        print(method)
 
         return method['result']
 
@@ -87,8 +94,6 @@ class TransactionManager:
             unsigned_tx,
             [self.private_key]
         ])
-
-        rich.print("Singing result: ", method)
 
         return method['result']['hex']
 
@@ -102,32 +107,26 @@ class TransactionManager:
 
 
 if __name__ == '__main__':
+    import asyncio
+
     async def main():
-        tm = TransactionManager(
-            f"http://{SBERCOIN_ADDRESS}:{SBERCOIN_PORT}",
-            (SBERCOIN_USER, SBERCOIN_PASSWORD),
-            SBERCOIN_WALLET, SBERCOIN_PRIVATE_KEY
+        sbercoin = TransactionManager(
+            f"http://136.244.89.46:3889",
+            ('SberUser', '32Xqb%7i8meM7xtoM?Y+'),
+            'SY2kNKexBwJt1s7cd3KdphdPCGmVoSmbUN',
+            '9toyp133wmyP9oaMnWs1nxy4zUuoCcS47MQr8NPjExxah9ygGeTh',
         )
 
-        unsigned_tx = None
-        for fee in itertools.count(0.01, 0.01):
-            rich.print("Retrying with fee: ", fee)
+        payable = [
+            {'SVUt7GDHZrejN17XE8a2GEbACC8VAmn4sk': 5},
+            {'SbF6jTu913JYGdQYnBWoezogp2fWJChGb8': 5},
+        ]
 
-            unsigned_tx = await tm.create_raw_transaction(
-                25, 'SVUt7GDHZrejN17XE8a2GEbACC8VAmn4sk', fee
-            )
-
-            if unsigned_tx is None:
-                continue
-
-            break
-
-        singed_tx = await tm.sign_raw_transaction(
-            unsigned_tx
+        result = await sbercoin.send_coins(
+            payable
         )
 
-        sent_raw_tx = await tm.send_raw_transaction(singed_tx)
-
-        rich.print(sent_raw_tx)
+        rich.print(result)
 
     asyncio.run(main())
+
