@@ -1,5 +1,8 @@
+[default]
+debug = true
+
 [winpay]
-hour = 16
+hour = 18
 minute = 30
 second = 0
 microsecond = 0
@@ -22,3 +25,15 @@ password = '32Xqb%7i8meM7xtoM?Y+'
 register = 5 # 1000
 referral = 5 # 10
 master = 5 # 1 000 000
+ref_master = 0.1 # 10%
+
+[email]
+password = "dmitriiezhow@gmail.com"
+server = "smtp.gmail.com"
+port = 587
+username = "dmitriiezhow@gmail.com"
+from_ = "dmitriiezhow@gmail.com"
+ssl_tls = false
+starttls = false
+use_credentials = true
+validate_certs = true

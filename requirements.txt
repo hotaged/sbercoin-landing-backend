@@ -27,3 +27,5 @@ jsonrpclib~=0.2.1
 aiohttp~=3.8.3
 
 ujson~=5.7.0
+
+fastapi-mail

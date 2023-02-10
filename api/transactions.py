@@ -39,7 +39,6 @@ class TransactionManager:
 
     async def address_exists(self, address: str):
         result = await self.call_method("getaddressbalance", [address])
-        rich.print(result)
         return result['error'] is None
 
     async def fetch(self, client: ClientSession, data: dict) -> dict:
@@ -85,8 +84,6 @@ class TransactionManager:
             [*payable, {self.wallet: balance - amount - fee}]
         ])
 
-        print(method)
-
         return method['result']
 
     async def sign_raw_transaction(self, unsigned_tx: str) -> str:
@@ -105,28 +102,7 @@ class TransactionManager:
         method = await self.call_method("getaddressbalance", [self.wallet])
         return method['result']['balance'] / 10 ** 7
 
-
-if __name__ == '__main__':
-    import asyncio
-
-    async def main():
-        sbercoin = TransactionManager(
-            f"http://136.244.89.46:3889",
-            ('SberUser', '32Xqb%7i8meM7xtoM?Y+'),
-            'SY2kNKexBwJt1s7cd3KdphdPCGmVoSmbUN',
-            '9toyp133wmyP9oaMnWs1nxy4zUuoCcS47MQr8NPjExxah9ygGeTh',
-        )
-
-        payable = [
-            {'SVUt7GDHZrejN17XE8a2GEbACC8VAmn4sk': 5},
-            {'SbF6jTu913JYGdQYnBWoezogp2fWJChGb8': 5},
-        ]
-
-        result = await sbercoin.send_coins(
-            payable
-        )
-
-        rich.print(result)
-
-    asyncio.run(main())
+    async def get_last_block_hash(self):
+        block_count = (await self.call_method("getblockcount"))['result']
+        return (await self.call_method("getblockhash", [block_count]))['result']
 
