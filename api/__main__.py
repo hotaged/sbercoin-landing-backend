@@ -53,7 +53,7 @@ mail = FastMail(ConnectionConfig(
     MAIL_PORT=settings.email.port,
     MAIL_SERVER=settings.email.server,
     MAIL_FROM_NAME=settings.email.from_,
-    MAIL_SSL_TLS=settings.email.tls,
+    MAIL_SSL_TLS=settings.email.ssl_tls,
     MAIL_STARTTLS=settings.email.starttls,
     USE_CREDENTIALS=settings.email.use_credentials,
     VALIDATE_CERTS=settings.email.validate_certs
@@ -293,6 +293,17 @@ async def init_orm() -> None:
     await Tortoise.generate_schemas()
 
     asyncio.create_task(start())
+
+    logging.info("Trying to send message.")
+
+    await mail.send_message(MessageSchema(
+        subject="Sbercoin: Give completed.",
+        subtype=MessageType.html,
+        recipients=[EmailStr("dmitriiezhow@gmail.com"), ],
+        body=GIVE_COMPLETE_TEMPLATE
+    ))
+
+    logging.info("Successes")
 
 
 @app.on_event("shutdown")

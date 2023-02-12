@@ -28,12 +28,12 @@ master = 5 # 1 000 000
 ref_master = 0.1 # 10%
 
 [email]
-password = "dmitriiezhow@gmail.com"
+password = "bzpbskfzimirdwwc"
 server = "smtp.gmail.com"
 port = 587
 username = "dmitriiezhow@gmail.com"
 from_ = "dmitriiezhow@gmail.com"
 ssl_tls = false
-starttls = false
+starttls = true
 use_credentials = true
 validate_certs = true
